@@ -22,7 +22,7 @@ body{
 
 h1{
   font-size:26px;
-  margin-bottom:40px;
+  margin-bottom:80px;
 }
 
 .controls{
@@ -30,7 +30,7 @@ h1{
   justify-content:center;
   align-items:center;
   gap:25px;
-  margin-bottom:40px;
+  margin-bottom:80px;
 }
 
 .control{
@@ -108,9 +108,9 @@ button{
 <div id="volValue">0.25</div>
 </div>
 
-<!-- ✅ 新位置：BEAT Interval -->
+<!-- ✅ 新位置：B-Interval -->
 <div class="control">
-<label>BEAT Interval</label>
+<label>B-Interval</label>
 <input type="range" id="beatRange" min="3" max="8" value="4">
 <div id="beatValue">4</div>
 </div>
@@ -165,7 +165,7 @@ volRange.addEventListener('input',()=>{
   volValue.innerText=volume.toFixed(2);
 });
 
-/* BEAT Interval 控制 */
+/* B-Interval 控制 */
 beatRange.addEventListener('input',()=>{
   beatsPerBar=parseInt(beatRange.value);
   beatValue.innerText=beatsPerBar;
