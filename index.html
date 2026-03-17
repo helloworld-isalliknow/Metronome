@@ -64,17 +64,14 @@ button{
 
 .start{
   background:#22c55e;
-  color:#000;
 }
 
 .stop{
   background:#ef4444;
-  color:#000;
 }
 
 .toneBtn{
   background:#ccc;
-  color:#000;
   padding:18px;
   font-size:18px;
   border-radius:12px;
@@ -82,7 +79,6 @@ button{
 
 .toneBtn.active{
   background:#f59e0b;
-  color:#000;
 }
 
 .tones{
@@ -91,6 +87,15 @@ button{
   gap:16px;
   margin-top:30px;
   padding:0 20px;
+}
+
+/* ✅ 新增：强拍模式UI */
+.modeBtn{
+  background:#ccc;
+}
+
+.modeBtn.active{
+  background:#22c55e;
 }
 
 </style>
@@ -128,11 +133,11 @@ button{
 <button class="toneBtn active" data-tone="kick">低音</button>
 </div>
 
-<!-- 新增：强拍模式选择 -->
+<!-- ✅ 新增：强拍模式（清晰UI） -->
 <div style="margin-top:25px;">
   <label>强拍模式</label><br><br>
-  <button onclick="setBeats(4)">4拍</button>
-  <button onclick="setBeats(3)">3拍</button>
+  <button id="mode4" class="modeBtn active" onclick="setBeats(4)">4拍</button>
+  <button id="mode3" class="modeBtn" onclick="setBeats(3)">3拍</button>
 </div>
 
 <script>
@@ -146,7 +151,7 @@ let bpm=180;
 let volume=0.25;
 
 let beatCount=0;
-let beatsPerBar=4; // 新增：默认4拍
+let beatsPerBar=4; // ✅ 新增
 
 let wakeLock=null;
 
@@ -174,10 +179,14 @@ toneButtons.forEach(btn=>{
   });
 });
 
-// 新增：设置拍数
+/* ✅ 新增：切换强拍模式 */
 function setBeats(n){
   beatsPerBar = n;
   beatCount = 0;
+
+  document.getElementById('mode4').classList.remove('active');
+  document.getElementById('mode3').classList.remove('active');
+  document.getElementById('mode'+n).classList.add('active');
 }
 
 async function keepScreenOn(){
@@ -276,7 +285,7 @@ function scheduler(){
   while(nextTickTime<ctx.currentTime+lookahead){
     beep(nextTickTime,beatCount);
     beatCount++;
-    if(beatCount>=beatsPerBar) beatCount=0; // 修改点
+    if(beatCount>=beatsPerBar) beatCount=0; // ✅ 修改
     nextTickTime+=60/bpm;
   }
   schedulerTimer=setTimeout(scheduler,25);
