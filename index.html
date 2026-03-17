@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!DOCTYPE html> 
 <html>
 <head>
 
@@ -128,6 +128,13 @@ button{
 <button class="toneBtn active" data-tone="kick">低音</button>
 </div>
 
+<!-- 新增：强拍模式选择 -->
+<div style="margin-top:25px;">
+  <label>强拍模式</label><br><br>
+  <button onclick="setBeats(4)">4拍</button>
+  <button onclick="setBeats(3)">3拍</button>
+</div>
+
 <script>
 
 let ctx=null;
@@ -139,6 +146,7 @@ let bpm=180;
 let volume=0.25;
 
 let beatCount=0;
+let beatsPerBar=4; // 新增：默认4拍
 
 let wakeLock=null;
 
@@ -165,6 +173,12 @@ toneButtons.forEach(btn=>{
     btn.classList.toggle('active');
   });
 });
+
+// 新增：设置拍数
+function setBeats(n){
+  beatsPerBar = n;
+  beatCount = 0;
+}
 
 async function keepScreenOn(){
   try{
@@ -262,7 +276,7 @@ function scheduler(){
   while(nextTickTime<ctx.currentTime+lookahead){
     beep(nextTickTime,beatCount);
     beatCount++;
-    if(beatCount>=4) beatCount=0;
+    if(beatCount>=beatsPerBar) beatCount=0; // 修改点
     nextTickTime+=60/bpm;
   }
   schedulerTimer=setTimeout(scheduler,25);
