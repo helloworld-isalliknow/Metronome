@@ -29,7 +29,7 @@ h1{
   display:flex;
   justify-content:center;
   align-items:center;
-  gap:30px;
+  gap:25px;
   margin-bottom:15px;
 }
 
@@ -51,12 +51,14 @@ input[type=range]{
   height:150px;
 }
 
+/* ✅ 所有按钮文字改为白色 */
 button{
   font-size:16px;
   padding:12px 18px;
   margin:6px;
   border-radius:10px;
   border:none;
+  color:#fff;
 }
 
 .start{
@@ -85,16 +87,6 @@ button{
   margin-top:15px;
 }
 
-/* 新增：拍数滑杆 */
-.beatControl{
-  margin-top:15px;
-}
-
-.beatValue{
-  font-size:18px;
-  margin-top:5px;
-}
-
 </style>
 </head>
 
@@ -116,6 +108,13 @@ button{
 <div id="volValue">0.25</div>
 </div>
 
+<!-- ✅ 新位置：BEAT Interval -->
+<div class="control">
+<label>BEAT Interval</label>
+<input type="range" id="beatRange" min="3" max="8" value="4">
+<div id="beatValue">4</div>
+</div>
+
 </div>
 
 <button class="start" onclick="start()">Start</button>
@@ -130,13 +129,6 @@ button{
 <button class="toneBtn active" data-tone="kick">低音</button>
 </div>
 
-<!-- ✅ 新增：拍数滑杆 -->
-<div class="beatControl">
-  <label>每X拍一强拍</label><br>
-  <input type="range" id="beatRange" min="3" max="8" value="4">
-  <div class="beatValue" id="beatValue">4</div>
-</div>
-
 <script>
 
 let ctx=null;
@@ -148,7 +140,7 @@ let bpm=180;
 let volume=0.25;
 
 let beatCount=0;
-let beatsPerBar=4; // 默认4
+let beatsPerBar=4;
 
 let wakeLock=null;
 
@@ -173,7 +165,7 @@ volRange.addEventListener('input',()=>{
   volValue.innerText=volume.toFixed(2);
 });
 
-/* ✅ 新增：拍数控制 */
+/* BEAT Interval 控制 */
 beatRange.addEventListener('input',()=>{
   beatsPerBar=parseInt(beatRange.value);
   beatValue.innerText=beatsPerBar;
