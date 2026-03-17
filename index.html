@@ -15,23 +15,22 @@
 body{
   font-family:-apple-system;
   text-align:center;
-  margin-top:40px;
+  margin:10px;
   background:#fff;
   color:#000;
 }
 
 h1{
-  font-size:34px;
-  margin-bottom:30px;
-  color:#000;
+  font-size:26px;
+  margin-bottom:15px;
 }
 
 .controls{
   display:flex;
   justify-content:center;
   align-items:center;
-  gap:50px;
-  margin-bottom:30px;
+  gap:30px;
+  margin-bottom:15px;
 }
 
 .control{
@@ -41,25 +40,23 @@ h1{
 }
 
 label{
-  margin-bottom:12px;
-  font-size:18px;
-  color:#000;
+  margin-bottom:8px;
+  font-size:14px;
 }
 
 input[type=range]{
   -webkit-appearance: slider-vertical;
   writing-mode: bt-lr;
-  width:50px;
-  height:220px;
+  width:40px;
+  height:150px;
 }
 
 button{
-  font-size:22px;
-  padding:18px 30px;
-  margin:10px;
-  border-radius:12px;
+  font-size:16px;
+  padding:12px 18px;
+  margin:6px;
+  border-radius:10px;
   border:none;
-  color:#000;
 }
 
 .start{
@@ -72,9 +69,9 @@ button{
 
 .toneBtn{
   background:#ccc;
-  padding:18px;
-  font-size:18px;
-  border-radius:12px;
+  padding:12px;
+  font-size:14px;
+  border-radius:10px;
 }
 
 .toneBtn.active{
@@ -84,18 +81,18 @@ button{
 .tones{
   display:grid;
   grid-template-columns:repeat(3,1fr);
-  gap:16px;
-  margin-top:30px;
-  padding:0 20px;
+  gap:10px;
+  margin-top:15px;
 }
 
-/* ✅ 新增：强拍模式UI */
-.modeBtn{
-  background:#ccc;
+/* 新增：拍数滑杆 */
+.beatControl{
+  margin-top:15px;
 }
 
-.modeBtn.active{
-  background:#22c55e;
+.beatValue{
+  font-size:18px;
+  margin-top:5px;
 }
 
 </style>
@@ -133,11 +130,11 @@ button{
 <button class="toneBtn active" data-tone="kick">低音</button>
 </div>
 
-<!-- ✅ 新增：强拍模式（清晰UI） -->
-<div style="margin-top:25px;">
-  <label>强拍模式</label><br><br>
-  <button id="mode4" class="modeBtn active" onclick="setBeats(4)">4拍</button>
-  <button id="mode3" class="modeBtn" onclick="setBeats(3)">3拍</button>
+<!-- ✅ 新增：拍数滑杆 -->
+<div class="beatControl">
+  <label>每X拍一强拍</label><br>
+  <input type="range" id="beatRange" min="3" max="8" value="4">
+  <div class="beatValue" id="beatValue">4</div>
 </div>
 
 <script>
@@ -151,7 +148,7 @@ let bpm=180;
 let volume=0.25;
 
 let beatCount=0;
-let beatsPerBar=4; // ✅ 新增
+let beatsPerBar=4; // 默认4
 
 let wakeLock=null;
 
@@ -160,6 +157,9 @@ const bpmValue=document.getElementById('bpmValue');
 
 const volRange=document.getElementById('volRange');
 const volValue=document.getElementById('volValue');
+
+const beatRange=document.getElementById('beatRange');
+const beatValue=document.getElementById('beatValue');
 
 const toneButtons=document.querySelectorAll('.toneBtn');
 
@@ -173,21 +173,18 @@ volRange.addEventListener('input',()=>{
   volValue.innerText=volume.toFixed(2);
 });
 
+/* ✅ 新增：拍数控制 */
+beatRange.addEventListener('input',()=>{
+  beatsPerBar=parseInt(beatRange.value);
+  beatValue.innerText=beatsPerBar;
+  beatCount=0;
+});
+
 toneButtons.forEach(btn=>{
   btn.addEventListener('click',()=>{
     btn.classList.toggle('active');
   });
 });
-
-/* ✅ 新增：切换强拍模式 */
-function setBeats(n){
-  beatsPerBar = n;
-  beatCount = 0;
-
-  document.getElementById('mode4').classList.remove('active');
-  document.getElementById('mode3').classList.remove('active');
-  document.getElementById('mode'+n).classList.add('active');
-}
 
 async function keepScreenOn(){
   try{
@@ -285,7 +282,7 @@ function scheduler(){
   while(nextTickTime<ctx.currentTime+lookahead){
     beep(nextTickTime,beatCount);
     beatCount++;
-    if(beatCount>=beatsPerBar) beatCount=0; // ✅ 修改
+    if(beatCount>=beatsPerBar) beatCount=0;
     nextTickTime+=60/bpm;
   }
   schedulerTimer=setTimeout(scheduler,25);
