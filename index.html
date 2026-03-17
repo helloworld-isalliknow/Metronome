@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Running Cadence</title>
+
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="Cadence">
+<link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2972/2972185.png">
+
+<style>
+
+body{
+  font-family:-apple-system;
+  text-align:center;
+  margin-top:40px;
+  background:#fff;
+  color:#000;
+}
+
+h1{
+  font-size:34px;
+  margin-bottom:30px;
+  color:#000;
+}
+
+.controls{
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  gap:50px;
+  margin-bottom:30px;
+}
+
+.control{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+}
+
+label{
+  margin-bottom:12px;
+  font-size:18px;
+  color:#000;
+}
+
+input[type=range]{
+  -webkit-appearance: slider-vertical;
+  writing-mode: bt-lr;
+  width:50px;
+  height:220px;
+}
+
+button{
+  font-size:22px;
+  padding:18px 30px;
+  margin:10px;
+  border-radius:12px;
+  border:none;
+  color:#000;
+}
+
+.start{
+  background:#22c55e;
+  color:#000;
+}
+
+.stop{
+  background:#ef4444;
+  color:#000;
+}
+
+.toneBtn{
+  background:#ccc;
+  color:#000;
+  padding:18px;
+  font-size:18px;
+  border-radius:12px;
+}
+
+.toneBtn.active{
+  background:#f59e0b;
+  color:#000;
+}
+
+.tones{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:16px;
+  margin-top:30px;
+  padding:0 20px;
+}
+
+</style>
+</head>
+
+<body>
+
+<h1>Running Cadence</h1>
+
+<div class="controls">
+
+<div class="control">
+<label>BPM</label>
+<input type="range" id="bpmRange" min="160" max="200" value="180">
+<div id="bpmValue">180</div>
+</div>
+
+<div class="control">
+<label>Volume</label>
+<input type="range" id="volRange" min="0" max="1" step="0.01" value="0.25">
+<div id="volValue">0.25</div>
+</div>
+
+</div>
+
+<button class="start" onclick="start()">Start</button>
+<button class="stop" onclick="stop()">Stop</button>
+
+<div class="tones">
+<button class="toneBtn active" data-tone="drum">鼓点</button>
+<button class="toneBtn active" data-tone="wood">木鼓</button>
+<button class="toneBtn active" data-tone="bubble">水泡</button>
+<button class="toneBtn active" data-tone="bell">铃声</button>
+<button class="toneBtn active" data-tone="ping">清脆</button>
+<button class="toneBtn active" data-tone="kick">低音</button>
+</div>
+
+<script>
+
+let ctx=null;
+let nextTickTime=0;
+let schedulerTimer=null;
+let isRunning=false;
+
+let bpm=180;
+let volume=0.25;
+
+let beatCount=0;
+
+let wakeLock=null;
+
+const bpmRange=document.getElementById('bpmRange');
+const bpmValue=document.getElementById('bpmValue');
+
+const volRange=document.getElementById('volRange');
+const volValue=document.getElementById('volValue');
+
+const toneButtons=document.querySelectorAll('.toneBtn');
+
+bpmRange.addEventListener('input',()=>{
+  bpm=parseInt(bpmRange.value);
+  bpmValue.innerText=bpm;
+});
+
+volRange.addEventListener('input',()=>{
+  volume=parseFloat(volRange.value);
+  volValue.innerText=volume.toFixed(2);
+});
+
+toneButtons.forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    btn.classList.toggle('active');
+  });
+});
+
+async function keepScreenOn(){
+  try{
+    wakeLock = await navigator.wakeLock.request('screen');
+  }catch(e){}
+}
+
+async function releaseScreen(){
+  if(wakeLock){
+    await wakeLock.release();
+    wakeLock=null;
+  }
+}
+
+function beepSingleTone(toneName,time,isAccent){
+
+  const gainNode=ctx.createGain();
+  gainNode.connect(ctx.destination);
+
+  const vol = isAccent ? volume * 2 : volume;
+  const decay = isAccent ? 0.12 : 0.08;
+
+  gainNode.gain.setValueAtTime(0,time);
+  gainNode.gain.linearRampToValueAtTime(vol,time+0.005);
+  gainNode.gain.linearRampToValueAtTime(0,time+decay);
+
+  let osc;
+
+  if(toneName==='drum'){
+    const buffer=ctx.createBuffer(1,ctx.sampleRate*0.05,ctx.sampleRate);
+    const data=buffer.getChannelData(0);
+    for(let i=0;i<data.length;i++){
+      data[i]=(Math.random()*2-1)*0.4;
+    }
+    const noise=ctx.createBufferSource();
+    noise.buffer=buffer;
+    noise.connect(gainNode);
+    noise.start(time);
+  }
+  else if(toneName==='wood'){
+    osc=ctx.createOscillator();
+    osc.type='triangle';
+    osc.frequency.value=650;
+    osc.connect(gainNode);
+    osc.start(time);
+    osc.stop(time+decay);
+  }
+  else if(toneName==='bubble'){
+    osc=ctx.createOscillator();
+    osc.type='sine';
+    osc.frequency.value=450;
+    osc.connect(gainNode);
+    osc.start(time);
+    osc.stop(time+decay);
+  }
+  else if(toneName==='bell'){
+    osc=ctx.createOscillator();
+    osc.type='sine';
+    osc.frequency.value=800;
+    osc.connect(gainNode);
+    osc.start(time);
+    osc.stop(time+decay);
+  }
+  else if(toneName==='ping'){
+    osc=ctx.createOscillator();
+    osc.type='triangle';
+    osc.frequency.value=900;
+    osc.connect(gainNode);
+    osc.start(time);
+    osc.stop(time+decay);
+  }
+  else if(toneName==='kick'){
+    osc=ctx.createOscillator();
+    osc.type='sine';
+    osc.frequency.value=200;
+    osc.connect(gainNode);
+    osc.start(time);
+    osc.stop(time+decay);
+  }
+
+}
+
+function beep(time,beat){
+  const isAccent=(beat===0);
+  const activeTones=Array.from(toneButtons)
+    .filter(b=>b.classList.contains('active'))
+    .map(b=>b.dataset.tone);
+  activeTones.forEach(toneName=>{
+    beepSingleTone(toneName,time,isAccent);
+  });
+}
+
+function scheduler(){
+  const lookahead=0.1;
+  while(nextTickTime<ctx.currentTime+lookahead){
+    beep(nextTickTime,beatCount);
+    beatCount++;
+    if(beatCount>=4) beatCount=0;
+    nextTickTime+=60/bpm;
+  }
+  schedulerTimer=setTimeout(scheduler,25);
+}
+
+async function start(){
+  if(isRunning) return;
+  if(!ctx){
+    ctx=new(window.AudioContext||window.webkitAudioContext)();
+  }
+  await ctx.resume();
+  keepScreenOn();
+  beatCount=0;
+  nextTickTime=ctx.currentTime+0.05;
+  scheduler();
+  isRunning=true;
+}
+
+async function stop(){
+  if(!isRunning) return;
+  clearTimeout(schedulerTimer);
+  schedulerTimer=null;
+  await releaseScreen();
+  isRunning=false;
+}
+
+</script>
+
+</body>
+</html>
