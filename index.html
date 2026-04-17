@@ -9,6 +9,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="apple-mobile-web-app-title" content="Metronome">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
+
 <style>
 
 body{
@@ -21,15 +22,15 @@ body{
 
 h1{
   font-size:26px;
-  margin-bottom:80px;
+  margin-bottom:60px;
 }
 
 .controls{
   display:flex;
   justify-content:center;
   align-items:center;
-  gap:25px;
-  margin-bottom:80px;
+  gap:30px;
+  margin-bottom:60px;
 }
 
 .control{
@@ -43,14 +44,33 @@ label{
   font-size:14px;
 }
 
+/* ✅ 滑杆整体放大（更容易拖） */
 input[type=range]{
   -webkit-appearance: slider-vertical;
   writing-mode: bt-lr;
-  width:40px;
-  height:150px;
+
+  width:70px;
+  height:220px;
+  padding:10px;
 }
 
-/* ✅ 所有按钮文字改为白色 */
+/* ✅ 滑块按钮放大 */
+input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none;
+  width:28px;
+  height:28px;
+  border-radius:50%;
+  background:#333;
+}
+
+/* ✅ 滑轨优化 */
+input[type=range]::-webkit-slider-runnable-track{
+  width:10px;
+  background:#ddd;
+  border-radius:5px;
+}
+
+/* 按钮 */
 button{
   font-size:16px;
   padding:12px 18px;
@@ -58,6 +78,7 @@ button{
   border-radius:10px;
   border:none;
   color:#fff;
+  min-width:70px;
 }
 
 .start{
@@ -104,14 +125,7 @@ button{
 <div class="control">
 <label>Volume</label>
 <input type="range" id="volRange" min="0" max="1" step="0.01" value="0.25">
-<div id="volValue">0.25</div>
-</div>
-
-<!-- ✅ 新位置：B-Interval -->
-<div class="control">
-<label>B-Interval</label>
-<input type="range" id="beatRange" min="3" max="8" value="4">
-<div id="beatValue">4</div>
+<div id="volValue">25%</div>
 </div>
 
 </div>
@@ -138,9 +152,6 @@ let isRunning=false;
 let bpm=180;
 let volume=0.25;
 
-let beatCount=0;
-let beatsPerBar=4;
-
 let wakeLock=null;
 
 const bpmRange=document.getElementById('bpmRange');
@@ -148,9 +159,6 @@ const bpmValue=document.getElementById('bpmValue');
 
 const volRange=document.getElementById('volRange');
 const volValue=document.getElementById('volValue');
-
-const beatRange=document.getElementById('beatRange');
-const beatValue=document.getElementById('beatValue');
 
 const toneButtons=document.querySelectorAll('.toneBtn');
 
@@ -161,14 +169,7 @@ bpmRange.addEventListener('input',()=>{
 
 volRange.addEventListener('input',()=>{
   volume=parseFloat(volRange.value);
-  volValue.innerText=volume.toFixed(2);
-});
-
-/* B-Interval 控制 */
-beatRange.addEventListener('input',()=>{
-  beatsPerBar=parseInt(beatRange.value);
-  beatValue.innerText=beatsPerBar;
-  beatCount=0;
+  volValue.innerText=Math.round(volume*100)+"%";
 });
 
 toneButtons.forEach(btn=>{
@@ -190,13 +191,14 @@ async function releaseScreen(){
   }
 }
 
-function beepSingleTone(toneName,time,isAccent){
+/* ✅ 所有拍子完全一致（无重拍） */
+function beepSingleTone(toneName,time){
 
   const gainNode=ctx.createGain();
   gainNode.connect(ctx.destination);
 
-  const vol = isAccent ? volume * 2 : volume;
-  const decay = isAccent ? 0.12 : 0.08;
+  const vol = volume;
+  const decay = 0.08;
 
   gainNode.gain.setValueAtTime(0,time);
   gainNode.gain.linearRampToValueAtTime(vol,time+0.005);
@@ -215,87 +217,80 @@ function beepSingleTone(toneName,time,isAccent){
     noise.connect(gainNode);
     noise.start(time);
   }
-  else if(toneName==='wood'){
+  else{
     osc=ctx.createOscillator();
-    osc.type='triangle';
-    osc.frequency.value=650;
-    osc.connect(gainNode);
-    osc.start(time);
-    osc.stop(time+decay);
-  }
-  else if(toneName==='bubble'){
-    osc=ctx.createOscillator();
-    osc.type='sine';
-    osc.frequency.value=450;
-    osc.connect(gainNode);
-    osc.start(time);
-    osc.stop(time+decay);
-  }
-  else if(toneName==='bell'){
-    osc=ctx.createOscillator();
-    osc.type='sine';
-    osc.frequency.value=800;
-    osc.connect(gainNode);
-    osc.start(time);
-    osc.stop(time+decay);
-  }
-  else if(toneName==='ping'){
-    osc=ctx.createOscillator();
-    osc.type='triangle';
-    osc.frequency.value=900;
-    osc.connect(gainNode);
-    osc.start(time);
-    osc.stop(time+decay);
-  }
-  else if(toneName==='kick'){
-    osc=ctx.createOscillator();
-    osc.type='sine';
-    osc.frequency.value=200;
-    osc.connect(gainNode);
-    osc.start(time);
-    osc.stop(time+decay);
-  }
 
+    if(toneName==='wood'){
+      osc.type='triangle';
+      osc.frequency.value=650;
+    }
+    else if(toneName==='bubble'){
+      osc.type='sine';
+      osc.frequency.value=450;
+    }
+    else if(toneName==='bell'){
+      osc.type='sine';
+      osc.frequency.value=800;
+    }
+    else if(toneName==='ping'){
+      osc.type='triangle';
+      osc.frequency.value=900;
+    }
+    else if(toneName==='kick'){
+      osc.type='sine';
+      osc.frequency.value=200;
+    }
+
+    osc.connect(gainNode);
+    osc.start(time);
+    osc.stop(time+decay);
+  }
 }
 
-function beep(time,beat){
-  const isAccent=(beat===0);
+/* ✅ 不再区分拍子 */
+function beep(time){
   const activeTones=Array.from(toneButtons)
     .filter(b=>b.classList.contains('active'))
     .map(b=>b.dataset.tone);
+
   activeTones.forEach(toneName=>{
-    beepSingleTone(toneName,time,isAccent);
+    beepSingleTone(toneName,time);
   });
 }
 
 function scheduler(){
   const lookahead=0.1;
+
   while(nextTickTime<ctx.currentTime+lookahead){
-    beep(nextTickTime,beatCount);
-    beatCount++;
-    if(beatCount>=beatsPerBar) beatCount=0;
+    beep(nextTickTime);
     nextTickTime+=60/bpm;
   }
+
   schedulerTimer=setTimeout(scheduler,25);
 }
 
 async function start(){
   if(isRunning) return;
+
   if(!ctx){
     ctx=new(window.AudioContext||window.webkitAudioContext)();
   }
+
   await ctx.resume();
   keepScreenOn();
-  beatCount=0;
+
   nextTickTime=ctx.currentTime+0.05;
   scheduler();
+
   isRunning=true;
 }
 
 async function stop(){
   if(!isRunning) return;
+
   clearTimeout(schedulerTimer);
   schedulerTimer=null;
+
   await releaseScreen();
   isRunning=false;
 }
